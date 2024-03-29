@@ -1,1 +1,0 @@
-El primer laboratorio tiene relación con el trabajo con Git.
