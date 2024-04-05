@@ -1,4 +1,5 @@
 *.zip
+!Laboratorios/Laboratorio_2/plaza.gif
 *.gif
 Laboratorios/*/.ipynb_checkpoints/
 Laboratorios/Laboratorio_2/images_lab
