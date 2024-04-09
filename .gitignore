@@ -6,3 +6,7 @@ Laboratorios/*/.ipynb_checkpoints/
 
 Laboratorios/Laboratorio_2/images_lab
 Laboratorios/Laboratorio_2/secuencia_plaza
+
+Laboratorios/Laboratorio_3/Lab3_pruebas.ipynb
+*.csv
+*.json
