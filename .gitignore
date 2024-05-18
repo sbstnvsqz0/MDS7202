@@ -11,3 +11,5 @@ Laboratorios/Laboratorio_3/Lab3_pruebas.ipynb
 *.csv
 *.json
 *.pickle
+*.parquet
+*.html
