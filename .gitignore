@@ -13,8 +13,12 @@ Laboratorios/Laboratorio_3/Lab3_pruebas.ipynb
 Proyecto/X_t0
 Proyecto/X_t1
 Proyecto/y_t0
+Proyecto/X_t2
+Proyecto/y_t1
 *.csv
 *.json
 *.pickle
 *.parquet
 *.html
+*.py
+*.txt
