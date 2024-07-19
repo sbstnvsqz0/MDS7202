@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     ####################################### RFC ##################################
     if args.name=="rfc":
-        def objetive_function(trial):
+        def objective_function(trial):
             params_model = {"n_estimators": trial.suggest_int("n_estimators",30,1000),
                             "max_depth": trial.suggest_int("max_depth",5,50),
                             "min_samples_split": trial.suggest_int("min_samples_split",2,5)}
