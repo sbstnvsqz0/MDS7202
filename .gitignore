@@ -23,5 +23,4 @@ Proyecto/optim_results
 *.pickle
 *.parquet
 *.html
-*.py
 *.txt
