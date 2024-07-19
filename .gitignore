@@ -15,6 +15,9 @@ Proyecto/X_t1
 Proyecto/y_t0
 Proyecto/X_t2
 Proyecto/y_t1
+
+Proyecto/optim_results
+
 *.csv
 *.json
 *.pickle
