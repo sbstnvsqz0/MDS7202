@@ -3,6 +3,13 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
+from lightgbm import LGBMClassifier
+from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import RobustScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
 
 def exploratory_data_analysis(dataframe):
     # shape
@@ -76,3 +83,102 @@ def rename_features_after_imputer(imputer_features,other_features):
 def eval_pipe(pipeline,X,y):
     y_hat = pipeline.predict(X)
     print(classification_report(y,y_hat))
+
+def pipe_rfc(grid,seed=40):
+
+    robust_scaler_features = "AliasMatch,NewCribMonths,customer_age,intended_balcon_amount,BankSpots8w,DOBEmails4w,BankMonths,CreditCap,DaysSinceJob,ZipHustle,Speed6h,Speed24h,RiskScore,HustleMinutes,Speed4w"
+    botar = "OldHoodMonths,DeviceScams"
+    imputer_features = "BankMonths,HustleMinutes,DeviceEmails8w,RiskScore,NewCribMonths"
+    one_hot_features = "income,JobStatus,CribStatus,LootMethod,InfoSource,DeviceOS,HustleMonth,DeviceEmails8w"
+    pass_features = "AliveSession,CellPhoneCheck,ExtraPlastic,ForeignHustle,FreeMail,HomePhoneCheck"
+
+    imputer = ColumnTransformer([("imputer",SimpleImputer(missing_values=-1,strategy = grid["strategy"]),imputer_features.split(","))],
+                                        remainder="passthrough")
+    imputer.set_output(transform='pandas')
+
+    col_transformer = ColumnTransformer([("encoder",OneHotEncoder(drop = "first",
+                                                                    sparse_output = False,
+                                                                    handle_unknown="ignore",
+                                                                    min_frequency = grid["min_frequency"]),rename_features_after_imputer(imputer_features,one_hot_features).split(",")),
+                                                ("RobustScaler",RobustScaler(),rename_features_after_imputer(imputer_features,robust_scaler_features).split(",")),
+                                                ("passthrough","passthrough",rename_features_after_imputer(imputer_features,pass_features).split(","))],
+                                                remainder = "drop")
+    col_transformer.set_output(transform='pandas')
+
+    pipeline = Pipeline([("imputer",imputer),
+                        ("col_transformer",col_transformer),
+                        ("clf",RandomForestClassifier(n_estimators = grid["n_estimators"],
+                                                        max_depth  = grid["max_depth"],
+                                                        min_samples_split = grid["min_samples_split"] ,
+                                                        class_weight = "balanced",random_state=seed))])
+    return pipeline
+
+
+def pipe_xgb(grid,seed=40):
+
+    robust_scaler_features = "AliasMatch,NewCribMonths,customer_age,intended_balcon_amount,BankSpots8w,DOBEmails4w,BankMonths,CreditCap,DaysSinceJob,ZipHustle,Speed6h,Speed24h,RiskScore,HustleMinutes,Speed4w"
+    botar = "OldHoodMonths,DeviceScams"
+    imputer_features = "BankMonths,HustleMinutes,DeviceEmails8w,RiskScore,NewCribMonths"
+    one_hot_features = "income,JobStatus,CribStatus,LootMethod,InfoSource,DeviceOS,HustleMonth,DeviceEmails8w"
+    pass_features = "AliveSession,CellPhoneCheck,ExtraPlastic,ForeignHustle,FreeMail,HomePhoneCheck"
+
+    imputer = ColumnTransformer([("imputer",SimpleImputer(missing_values=-1,strategy = grid["strategy"]),imputer_features.split(","))],
+                                        remainder="passthrough")
+    imputer.set_output(transform='pandas')
+
+    col_transformer = ColumnTransformer([("encoder",OneHotEncoder(drop = "first",
+                                                                    sparse_output = False,
+                                                                    handle_unknown="ignore",
+                                                                    min_frequency = grid["min_frequency"]),rename_features_after_imputer(imputer_features,one_hot_features).split(",")),
+                                                ("RobustScaler",RobustScaler(),rename_features_after_imputer(imputer_features,robust_scaler_features).split(",")),
+                                                ("passthrough","passthrough",rename_features_after_imputer(imputer_features,pass_features).split(","))],
+                                                remainder = "drop")
+    col_transformer.set_output(transform='pandas')
+
+    pipeline = Pipeline([("imputer",imputer),
+                        ("col_transformer",col_transformer),
+                        ("clf",XGBClassifier(learning_rate = grid["learning_rate"],
+                                            n_estimators =  grid["n_estimators"],
+                                            max_depth = grid["max_depth"],
+                                            max_leaves = grid["max_leaves"],
+                                            min_child_weight = grid["min_child_weight"],
+                                            reg_alpha = grid["reg_alpha"],
+                                            reg_lambda = grid["reg_lambda"],
+                                            scale_pos_weight=100,
+                                            random_state=seed))])
+    return pipeline
+
+def pipe_lgbm(grid,seed=40):
+
+    robust_scaler_features = "AliasMatch,NewCribMonths,customer_age,intended_balcon_amount,BankSpots8w,DOBEmails4w,BankMonths,CreditCap,DaysSinceJob,ZipHustle,Speed6h,Speed24h,RiskScore,HustleMinutes,Speed4w"
+    botar = "OldHoodMonths,DeviceScams"
+    imputer_features = "BankMonths,HustleMinutes,DeviceEmails8w,RiskScore,NewCribMonths"
+    one_hot_features = "income,JobStatus,CribStatus,LootMethod,InfoSource,DeviceOS,HustleMonth,DeviceEmails8w"
+    pass_features = "AliveSession,CellPhoneCheck,ExtraPlastic,ForeignHustle,FreeMail,HomePhoneCheck"
+
+    imputer = ColumnTransformer([("imputer",SimpleImputer(missing_values=-1,strategy = grid["strategy"]),imputer_features.split(","))],
+                                        remainder="passthrough")
+    imputer.set_output(transform='pandas')
+
+    col_transformer = ColumnTransformer([("encoder",OneHotEncoder(drop = "first",
+                                                                    sparse_output = False,
+                                                                    handle_unknown="ignore",
+                                                                    min_frequency = grid["min_frequency"]),rename_features_after_imputer(imputer_features,one_hot_features).split(",")),
+                                                ("RobustScaler",RobustScaler(),rename_features_after_imputer(imputer_features,robust_scaler_features).split(",")),
+                                                ("passthrough","passthrough",rename_features_after_imputer(imputer_features,pass_features).split(","))],
+                                                remainder = "drop")
+    col_transformer.set_output(transform='pandas')
+
+    pipeline = Pipeline([("imputer",imputer),
+                        ("col_transformer",col_transformer),
+                        ("clf",LGBMClassifier(learning_rate = grid["learning_rate"],
+                                            n_estimators =  grid["n_estimators"],
+                                            max_depth = grid["max_depth"],
+                                            num_leaves = grid["num_leaves"],
+                                            min_child_samples = grid["min_child_samples"],
+                                            reg_alpha = grid["reg_alpha"],
+                                            reg_lambda = grid["reg_lambda"],
+                                            verbose=-1,
+                                            class_weight= "balanced",
+                                            random_state=seed))])
+    return pipeline
