@@ -176,7 +176,7 @@ def pipe_lgbm(grid,seed=40):
     pipeline = Pipeline([("imputer",imputer),
                         ("col_transformer",col_transformer),
                         ("clf",LGBMClassifier(learning_rate = grid["learning_rate"],
-                                            n_estimators =  grid["n_estimators "],
+                                            n_estimators =  grid["n_estimators"],
                                             max_depth = grid["max_depth"],
                                             num_leaves = grid["num_leaves"],
                                             min_child_samples = grid["min_child_samples"],
