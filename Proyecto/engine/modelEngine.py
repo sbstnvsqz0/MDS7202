@@ -3,6 +3,7 @@ import shap
 from sklearn.pipeline import Pipeline
 from utils import eval_pipe
 from lightgbm import LGBMClassifier
+from utils import optimize_lgbm, pipe_lgbm
 
 class Clf():
     def __init__(self,name,model=None,t=None):
@@ -45,6 +46,14 @@ class Clf():
         self.model.steps.pop(-1)
         self.model.steps.append(("clf",new_model))
         self.t = t
+
+    def optim(self,X_train,X_val,y_train,y_val,trials):
+        """
+        Optimiza el modelo guardado
+        """
+        assert self.model is not None and self.t is not None, "No se ha cargado un modelo"
+        best_params = optimize_lgbm(self.model[-1],X_train,X_val,y_train,y_val,trials)
+        self.model = pipe_lgbm(best_params)
 
     def time(self):
         """Devuelve el ultimo tiempo en el que se entrenó el modelo"""

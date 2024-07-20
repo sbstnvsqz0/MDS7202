@@ -10,6 +10,10 @@ from sklearn.preprocessing import RobustScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from sklearn.metrics import f1_score
+import optuna
+from optuna.samplers import TPESampler
+
 
 def exploratory_data_analysis(dataframe):
     # shape
@@ -172,7 +176,7 @@ def pipe_lgbm(grid,seed=40):
     pipeline = Pipeline([("imputer",imputer),
                         ("col_transformer",col_transformer),
                         ("clf",LGBMClassifier(learning_rate = grid["learning_rate"],
-                                            n_estimators =  grid["n_estimators"],
+                                            n_estimators =  grid["n_estimators "],
                                             max_depth = grid["max_depth"],
                                             num_leaves = grid["num_leaves"],
                                             min_child_samples = grid["min_child_samples"],
@@ -182,3 +186,50 @@ def pipe_lgbm(grid,seed=40):
                                             class_weight= "balanced",
                                             random_state=seed))])
     return pipeline
+
+def optimize_lgbm(model,X_train,X_val,y_train,y_val,trials,seed=40):
+    robust_scaler_features = "AliasMatch,NewCribMonths,customer_age,intended_balcon_amount,BankSpots8w,DOBEmails4w,BankMonths,CreditCap,DaysSinceJob,ZipHustle,Speed6h,Speed24h,RiskScore,HustleMinutes,Speed4w"
+    botar = "OldHoodMonths,DeviceScams"
+    imputer_features = "BankMonths,HustleMinutes,DeviceEmails8w,RiskScore,NewCribMonths"
+    one_hot_features = "income,JobStatus,CribStatus,LootMethod,InfoSource,DeviceOS,HustleMonth,DeviceEmails8w"
+    pass_features = "AliveSession,CellPhoneCheck,ExtraPlastic,ForeignHustle,FreeMail,HomePhoneCheck"
+
+    def objective_function(trial):
+        params_model = {"num_leaves": trial.suggest_int("num_leaves",30,120),
+                            "max_depth": trial.suggest_int("max_depth",3,10),
+                            "learning_rate": trial.suggest_float("learning_rate",0.001,0.1,log=True),
+                            "n_estimators": trial.suggest_int("n_estimators ",20,100),
+                            "min_child_samples":trial.suggest_int("min_child_samples",5,10),
+                            "reg_alpha": trial.suggest_float("reg_alpha",0,1),
+                            "reg_lambda": trial.suggest_float("reg_lambda",0,1)}
+
+        params_encoder = {"drop":"first",
+                              "sparse_output":False,
+                              "handle_unknown":"ignore",
+                            "min_frequency":trial.suggest_float("min_frequency",0,1)}
+            
+        params_imputer = {"strategy": trial.suggest_categorical("strategy",["mean","median","most_frequent"])}
+
+        imputer = ColumnTransformer([("imputer",SimpleImputer(missing_values=-1,**params_imputer),imputer_features.split(","))],
+                                        remainder="passthrough")
+        imputer.set_output(transform='pandas')
+
+        col_transformer = ColumnTransformer([("encoder",OneHotEncoder(**params_encoder),rename_features_after_imputer(imputer_features,one_hot_features).split(",")),
+                                                ("RobustScaler",RobustScaler(),rename_features_after_imputer(imputer_features,robust_scaler_features).split(",")),
+                                                ("passthrough","passthrough",rename_features_after_imputer(imputer_features,pass_features).split(","))],
+                                                remainder = "drop")
+        col_transformer.set_output(transform='pandas')
+
+        model.set_params(verbose=-1,class_weight= "balanced",random_state=seed,**params_model)
+        pipeline = Pipeline([("imputer",imputer),
+                                ("col_transformer",col_transformer),
+                                ("clf",model)])
+        pipeline.fit(X_train,y_train)
+        y_pred = pipeline.predict(X_val)
+        return f1_score(y_val,y_pred)
+            
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    study = optuna.create_study(direction="maximize",sampler=TPESampler())
+    study.optimize(objective_function,n_trials=trials,show_progress_bar=True)
+    return study.best_params
+            
